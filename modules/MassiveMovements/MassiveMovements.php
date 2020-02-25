@@ -205,7 +205,7 @@ class MassiveMovements extends CRMEntity {
 	 * @param String Event Type (module.postinstall, module.disabled, module.enabled, module.preuninstall)
 	 */
 	public function vtlib_handler($modulename, $event_type) {
-		global $adb;
+		global $adb, $current_user;
 		require_once 'include/events/include.inc';
 		include_once 'vtlib/Vtiger/Module.php';
 		if ($event_type == 'module.postinstall') {
@@ -239,6 +239,20 @@ class MassiveMovements extends CRMEntity {
 				(workflowtasks_entitymethod_id,module_name,method_name,function_path,function_name)
 				values
 				($wfid,'MassiveMovements','mwReturnStock','modules/Movement/InventoryIncDec.php','mwReturnStock')");
+
+			include_once 'include/Webservices/Create.php';
+			$usrwsid = vtws_getEntityId('Users').'x';
+			vtws_create('GlobalVariable', array(
+				'gvname' => 'Inventory_Other_Modules',
+				'default_check' => '1',
+				'value' => 'MassiveMovements',
+				'mandatory' => '1',
+				'blocked' => '0',
+				'module_list' => 'MassiveMovements',
+				'category' => 'System',
+				'in_module_list' => '1',
+				'assigned_user_id' => $usrwsid.$current_user->id,
+			), $current_user);
 
 			$this->setModuleSeqNumber('configure', $modulename, 'MMv-', '000001');
 		} elseif ($event_type == 'module.disabled') {
