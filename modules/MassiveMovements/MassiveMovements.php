@@ -116,28 +116,27 @@ class MassiveMovements extends CRMEntity {
 			$this->insertIntoAttachment($this->id, $module);
 		}
 		//in ajax save we should not call this function, because this will delete all the existing product values
-		if(inventoryCanSaveProductLines($_REQUEST, 'MassiveMovements')) {
+		if (inventoryCanSaveProductLines($_REQUEST, 'MassiveMovements')) {
 			//Based on the total Number of rows we will save the product relationship with this entity
 			saveInventoryProductDetails($this, 'MassiveMovements');
 		}
 
 		// Update the currency id and the conversion rate for the invoice
-		$update_query = "update vtiger_massivemovements set currency_id=?, conversion_rate=? where massivemovementsid=?";
+		$update_query = 'update vtiger_massivemovements set currency_id=?, conversion_rate=? where massivemovementsid=?';
 		$update_params = array($this->column_fields['currency_id'], $this->column_fields['conversion_rate'], $this->id);
 		$this->db->pquery($update_query, $update_params);
 	}
 
 	public function restore($module, $id) {
-		global $current_user;
-		$this->db->println("TRANS restore starts $module");
+		$this->db->println('> MassMovement restore');
 		$this->db->startTransaction();
 
-		$this->db->pquery('UPDATE vtiger_crmentity SET deleted=0 WHERE crmid = ?', array($id));
+		$this->db->pquery('UPDATE vtiger_crmentity SET deleted=0 WHERE crmid=?', array($id));
 		//Restore related entities/records
-		$this->restoreRelatedRecords($module,$id);
+		$this->restoreRelatedRecords($module, $id);
 
 		$this->db->completeTransaction();
-		$this->db->println("TRANS restore ends");
+		$this->db->println('< MassMovement restore');
 	}
 
 	/*Function to create records in current module.
@@ -168,35 +167,35 @@ class MassiveMovements extends CRMEntity {
 	*/
 	public function create_export_query($where) {
 		global $log, $current_user;
-		$log->debug("Entering create_export_query(".$where.") method ...");
+		$log->debug('> create_export_query '.$where);
 
-		include("include/utils/ExportUtils.php");
+		include 'include/utils/ExportUtils.php';
 
 		//To get the Permitted fields query and the permitted fields list
 		$sql = getPermittedFieldsQuery("MassiveMovements", "detail_view");
 		$fields_list = getFieldsListFromQuery($sql);
 		$fields_list .= getInventoryFieldsForExport($this->table_name);
-		$userNameSql = getSqlForNameInDisplayFormat(array('first_name'=>'vtiger_users.first_name', 'last_name' => 'vtiger_users.last_name'), 'Users');
+		//$userNameSql = getSqlForNameInDisplayFormat(array('first_name'=>'vtiger_users.first_name', 'last_name' => 'vtiger_users.last_name'), 'Users');
 
-		$query = "SELECT $fields_list FROM ".$this->entity_table."
-			INNER JOIN vtiger_massivemovements ON vtiger_massivemovements.massivemovementsid = vtiger_crmentity.crmid
+		$query = "SELECT $fields_list FROM ".$this->entity_table
+			.'INNER JOIN vtiger_massivemovements ON vtiger_massivemovements.massivemovementsid = vtiger_crmentity.crmid
 			LEFT JOIN vtiger_massivemovementscf ON vtiger_massivemovementscf.massivemovementsid = vtiger_massivemovements.massivemovementsid
 			LEFT JOIN vtiger_inventoryproductrel ON vtiger_inventoryproductrel.id = vtiger_massivemovements.massivemovementsid
 			LEFT JOIN vtiger_products ON vtiger_products.productid = vtiger_inventoryproductrel.productid
 			LEFT JOIN vtiger_currency_info ON vtiger_currency_info.id = vtiger_massivemovements.currency_id
 			LEFT JOIN vtiger_groups ON vtiger_groups.groupid = vtiger_crmentity.smownerid
-			LEFT JOIN vtiger_users ON vtiger_users.id = vtiger_crmentity.smownerid";
+			LEFT JOIN vtiger_users ON vtiger_users.id = vtiger_crmentity.smownerid';
 
-		$query .= $this->getNonAdminAccessControlQuery('MassiveMovements',$current_user);
+		$query .= $this->getNonAdminAccessControlQuery('MassiveMovements', $current_user);
 		$where_auto = " vtiger_crmentity.deleted=0";
 
-		if($where != "") {
+		if ($where != '') {
 			$query .= " where ($where) AND ".$where_auto;
 		} else {
-			$query .= " where ".$where_auto;
+			$query .= ' where '.$where_auto;
 		}
 
-		$log->debug("Exiting create_export_query method ...");
+		$log->debug('< create_export_query');
 		return $query;
 	}
 
@@ -215,16 +214,18 @@ class MassiveMovements extends CRMEntity {
 			$modMov=Vtiger_Module::getInstance('Movement');
 			$modInvD=Vtiger_Module::getInstance('InventoryDetails');
 			$modMMv=Vtiger_Module::getInstance('MassiveMovements');
-			if ($modWarehouse) $modWarehouse->setRelatedList($modMMv, 'MassiveMovements', array('ADD'),'get_dependents_list');
-			if ($modInvD){
-				$field = Vtiger_Field::getInstance('related_to',$modInvD);
-				$field->setRelatedModules(array('MassiveMovements'));
-				$modMMv->setRelatedList($modInvD, 'InventoryDetails', array(''),'get_dependents_list');
+			if ($modWarehouse) {
+				$modWarehouse->setRelatedList($modMMv, 'MassiveMovements', array('ADD'), 'get_dependents_list');
 			}
-			if ($modMov){
-				$field = Vtiger_Field::getInstance('refid',$modMov);
+			if ($modInvD) {
+				$field = Vtiger_Field::getInstance('related_to', $modInvD);
 				$field->setRelatedModules(array('MassiveMovements'));
-				$modMMv->setRelatedList($modMov, 'Movement', array(''),'get_dependents_list');
+				$modMMv->setRelatedList($modInvD, 'InventoryDetails', array(''), 'get_dependents_list');
+			}
+			if ($modMov) {
+				$field = Vtiger_Field::getInstance('refid', $modMov);
+				$field->setRelatedModules(array('MassiveMovements'));
+				$modMMv->setRelatedList($modMov, 'Movement', array(''), 'get_dependents_list');
 			}
 
 			$wfid=$adb->getUniqueID('com_vtiger_workflowtasks_entitymethod');
@@ -239,7 +240,7 @@ class MassiveMovements extends CRMEntity {
 				values
 				($wfid,'MassiveMovements','mwReturnStock','modules/Movement/InventoryIncDec.php','mwReturnStock')");
 
-			$this->setModuleSeqNumber('configure', $modulename, 'MMv-', '0001');
+			$this->setModuleSeqNumber('configure', $modulename, 'MMv-', '000001');
 		} elseif ($event_type == 'module.disabled') {
 			// TODO Handle actions when this module is disabled.
 		} elseif ($event_type == 'module.enabled') {
@@ -260,7 +261,7 @@ class MassiveMovements extends CRMEntity {
 	 * returns the query string formed on fetching the related data for report for secondary module
 	 */
 	public function generateReportsSecQuery($module, $secmodule, $queryPlanner, $type = '', $where_condition = '') {
-		$query = $this->getRelationQuery($module, $secmodule, 'vtiger_massivemovements', 'massivemovementsid');
+		$query = $this->getRelationQuery($module, $secmodule, 'vtiger_massivemovements', 'massivemovementsid', $queryPlanner);
 		$query .= " left join vtiger_currency_info as vtiger_currency_info$secmodule on vtiger_currency_info$secmodule.id = vtiger_massivemovements.currency_id ";
 		if (($type !== 'COLUMNSTOTOTAL') || ($type == 'COLUMNSTOTOTAL' && $where_condition == 'add')) {
 			$query.='left join vtiger_inventoryproductrel as vtiger_inventoryproductrelMassiveMovements on vtiger_massivemovements.massivemovementsid=vtiger_inventoryproductrelMassiveMovements.id
