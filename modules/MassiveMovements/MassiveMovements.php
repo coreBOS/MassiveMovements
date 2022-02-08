@@ -12,9 +12,6 @@ require_once 'data/Tracker.php';
 require_once 'modules/InventoryDetails/InventoryDetails.php';
 
 class MassiveMovements extends CRMEntity {
-	public $db;
-	public $log;
-
 	public $table_name = 'vtiger_massivemovements';
 	public $table_index= 'massivemovementsid';
 	public $column_fields = array();
@@ -201,15 +198,15 @@ class MassiveMovements extends CRMEntity {
 
 	/**
 	 * Invoked when special actions are performed on the module.
-	 * @param String Module name
-	 * @param String Event Type (module.postinstall, module.disabled, module.enabled, module.preuninstall)
+	 * @param string Module name
+	 * @param string Event Type (module.postinstall, module.disabled, module.enabled, module.preuninstall)
 	 */
 	public function vtlib_handler($modulename, $event_type) {
 		global $adb, $current_user;
 		require_once 'include/events/include.inc';
 		include_once 'vtlib/Vtiger/Module.php';
 		if ($event_type == 'module.postinstall') {
-			// TODO Handle post installation actions
+			// Handle post installation actions
 			$modWarehouse=Vtiger_Module::getInstance('Warehouse');
 			$modMov=Vtiger_Module::getInstance('Movement');
 			$modInvD=Vtiger_Module::getInstance('InventoryDetails');
@@ -256,15 +253,15 @@ class MassiveMovements extends CRMEntity {
 
 			$this->setModuleSeqNumber('configure', $modulename, 'MMv-', '000001');
 		} elseif ($event_type == 'module.disabled') {
-			// TODO Handle actions when this module is disabled.
+			// Handle actions when this module is disabled.
 		} elseif ($event_type == 'module.enabled') {
-			// TODO Handle actions when this module is enabled.
+			// Handle actions when this module is enabled.
 		} elseif ($event_type == 'module.preuninstall') {
-			// TODO Handle actions when this module is about to be deleted.
+			// Handle actions when this module is about to be deleted.
 		} elseif ($event_type == 'module.preupdate') {
-			// TODO Handle actions before this module is updated.
+			// Handle actions before this module is updated.
 		} elseif ($event_type == 'module.postupdate') {
-			// TODO Handle actions after this module is updated.
+			// Handle actions after this module is updated.
 		}
 	}
 
