@@ -109,6 +109,7 @@ class MassiveMovements extends CRMEntity {
 	public $mandatory_fields = array('createdtime', 'modifiedtime', 'massivemovements_no');
 
 	public function save_module($module) {
+		global $adb;
 		if ($this->HasDirectImageField) {
 			$this->insertIntoAttachment($this->id, $module);
 		}
@@ -121,19 +122,20 @@ class MassiveMovements extends CRMEntity {
 		// Update the currency id and the conversion rate for the invoice
 		$update_query = 'update vtiger_massivemovements set currency_id=?, conversion_rate=? where massivemovementsid=?';
 		$update_params = array($this->column_fields['currency_id'], $this->column_fields['conversion_rate'], $this->id);
-		$this->db->pquery($update_query, $update_params);
+		$adb->pquery($update_query, $update_params);
 	}
 
 	public function restore($module, $id) {
-		$this->db->println('> MassMovement restore');
-		$this->db->startTransaction();
+		global $adb;
+		$adb->println('> MassMovement restore');
+		$adb->startTransaction();
 
-		$this->db->pquery('UPDATE vtiger_crmentity SET deleted=0 WHERE crmid=?', array($id));
+		$adb->pquery('UPDATE vtiger_crmentity SET deleted=0 WHERE crmid=?', array($id));
 		//Restore related entities/records
 		$this->restoreRelatedRecords($module, $id);
 
-		$this->db->completeTransaction();
-		$this->db->println('< MassMovement restore');
+		$adb->completeTransaction();
+		$adb->println('< MassMovement restore');
 	}
 
 	/*Function to create records in current module.
@@ -250,7 +252,7 @@ class MassiveMovements extends CRMEntity {
 				'in_module_list' => '1',
 				'assigned_user_id' => $usrwsid.$current_user->id,
 			), $current_user);
-
+			$modMMv->addLink('HEADERSCRIPT', 'InventoryJS', 'include/js/Inventory.js', '', 1, null, true);
 			$this->setModuleSeqNumber('configure', $modulename, 'MMv-', '000001');
 		} elseif ($event_type == 'module.disabled') {
 			// Handle actions when this module is disabled.
@@ -265,11 +267,11 @@ class MassiveMovements extends CRMEntity {
 		}
 	}
 
-	/*
+	/**
 	 * Function to get the secondary query part of a report
-	 * @param - $module primary module name
-	 * @param - $secmodule secondary module name
-	 * returns the query string formed on fetching the related data for report for secondary module
+	 * @param string primary module name
+	 * @param string secondary module name
+	 * @return string the query formed on fetching the related data for report for secondary module
 	 */
 	public function generateReportsSecQuery($module, $secmodule, $queryPlanner, $type = '', $where_condition = '') {
 		$query = $this->getRelationQuery($module, $secmodule, 'vtiger_massivemovements', 'massivemovementsid', $queryPlanner);
